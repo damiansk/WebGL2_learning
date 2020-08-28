@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>WebGL 2.0 Learning</title>
+
+  
+  <link rel="stylesheet" type="text/css" href="./style.css">
+  <script src="./gl.js"></script>
+  <script src="./Shaders.js"></script>
+
+  <script>
+    let gl;
+
+    window.addEventListener('load', () => {
+      gl = GLInstance('glcanvas')
+        .fSetSize(500, 500)
+        .fClear();
+
+      const vShaderText = ShaderUtil.domShaderSrc('vertex_shader');
+      const fShaderText = ShaderUtil.domShaderSrc('fragment_shader');
+
+      const vShader = ShaderUtil.createShader(gl, vShaderText, gl.VERTEX_SHADER);
+      const fShader = ShaderUtil.createShader(gl, fShaderText, gl.FRAGMENT_SHADER);
+
+      const shaderProgram = ShaderUtil.createProgram(gl, vShader, fShader, true);
+
+      gl.useProgram(shaderProgram);
+
+      const aPositionLoc = gl.getAttribLocation(shaderProgram, 'a_position');
+      const uPointSizeLoc = gl.getUniformLocation(shaderProgram, 'uPointSize');
+
+      gl.useProgram(shaderProgram);
+
+      const arrayVertices = new Float32Array([
+        0, 0, 0,
+        0.5, 0.5, 0.5,
+        -0.5, 0.5, 0.5,
+        -0.5, -0.5, 0.5,
+        0.5, -0.5, 0.5,
+      ]);
+      const bufferVertices = gl.createBuffer();
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufferVertices);
+      gl.bufferData(gl.ARRAY_BUFFER, arrayVertices, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+      gl.useProgram(shaderProgram);
+      gl.uniform1f(uPointSizeLoc, 50.0);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufferVertices);
+      gl.enableVertexAttribArray(aPositionLoc);
+      gl.vertexAttribPointer(aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+      gl.drawArrays(gl.POINTS, 0, 5);
+    });
+  </script>
+</head>
+<body>
+  <div>
+    <canvas id="glcanvas"></canvas>
+  </div>
+
+  <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+    in vec3 a_position;
+
+    uniform float uPointSize;
+
+    void main(void) {
+      gl_PointSize = uPointSize;
+      gl_Position = vec4(a_position, 1.0);
+    }
+  </script>
+
+  <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+    precision mediump float;
+
+    out vec4 finalColor;
+
+    void main(void) {
+      finalColor = vec4(.8, .7, .5, 1.0);
+    }
+  </script>
+</body>
+</html>
