@@ -14,6 +14,17 @@ function GLInstance(canvasId) {
     return this;
   } 
 
+  gl.fCreateArrayBuffer = function(floatArray, isStatic = true) {
+    const bufferUsage = isStatic ? gl.STATIC_DRAW : gl.DYNAMIC_DRAW;
+    const buffer = this.createBuffer();
+
+    this.bindBuffer(this.ARRAY_BUFFER, buffer);
+    this.bufferData(this.ARRAY_BUFFER, floatArray, bufferUsage);
+    this.bindBuffer(this.ARRAY_BUFFER, null);
+
+    return buffer;
+  }
+
   gl.fSetSize = function(w, h) {
     this.canvas.style.width = w + 'px';
     this.canvas.style.height = h + 'px';
