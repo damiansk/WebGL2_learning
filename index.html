@@ -12,73 +12,52 @@
   <script src="./Shaders.js"></script>
   <script src="./RenderLoop.js"></script>
   <script src="./Model.js"></script>
+  <script src="./Primitives.js"></script>
 
   <script>
     let gl;
-    let gVerticesCount = 0;
-    let uPointSizeLoc = -1;
-    let uAngle = 0;
-    let gRenderLoop;
     let gShader;
     let gModel;
+    let gRenderLoop;
 
     window.addEventListener('load', () => {
       gl = GLInstance('glcanvas')
         .fSetSize(500, 500)
         .fClear();
 
-      gShader = new TestShader(gl);
-
-      const mesh = gl.fCreateMeshVAO('dots', null, [
-        0, 0, 0,
-        0.15, 0.15, 0.15,
-        -0.15, 0.15, 0.15,
-        -0.15, -0.15, 0.15,
-        0.15, -0.15, 0.15,
+      gShader = new TestShader(gl, [
+        0.8, 0.8, 0.8,
+        1, 0, 0,
+        0, 1, 0,
+        0, 0, 1,
       ]);
-      mesh.drawMode = gl.POINTS;
 
-      gModel = new Model(mesh); 
+      gModel = new Model(Primitives.GridAxis.createMesh(gl)); 
 
       gRenderLoop = new RenderLoop(onRender)
       gRenderLoop.start();
     });
 
-    const gPointSizeStep = 2;
-    const gAngleStep = (Math.PI / 180.0) * 60; // Rad
-    let gPointSize = 0;
-    let gAngle = 0;
-
     function onRender(dt) {
       gl.fClear();
-      
-      const size = (Math.sin(gPointSize += gPointSizeStep * dt) * 10) + 30;
-      gAngle += gAngleStep * dt;
 
       gShader.activate()
-        .set(size, gAngle)
         .renderModel(gModel);
     }
 
     class TestShader extends Shader {
-      constructor(gl) {
+      constructor(gl, colorArray) {
         const vShaderSrc = ShaderUtil.domShaderSrc('vertex_shader');
         const fShaderSrc = ShaderUtil.domShaderSrc('fragment_shader');
 
         super(gl, vShaderSrc, fShaderSrc);
 
-        this.uniformLocation.uPointSize = gl.getUniformLocation(this.program, 'uPointSize');
-        this.uniformLocation.uAngle = gl.getUniformLocation(this.program, 'uAngle');
+        const uColor = gl.getUniformLocation(this.program, 'uColor');
+        gl.uniform3fv(uColor, colorArray);
 
         gl.useProgram(null);
       }
 
-      set(size, angle) {
-        this.gl.uniform1f(this.uniformLocation.uPointSize, size);
-        this.gl.uniform1f(this.uniformLocation.uAngle, angle);
-
-        return this;
-      }
     }
   </script>
 </head>
@@ -89,36 +68,27 @@
 
   <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
     in vec3 a_position;
+    layout(location=4) in float a_color;
 
-    uniform mediump float uPointSize;
-    uniform float uAngle;
+    uniform vec3 uColor[4];
+
+    out lowp vec4 color;
 
     void main(void) {
-      gl_PointSize = uPointSize;
-      gl_Position = vec4(
-        cos(uAngle) * 0.6 + a_position.x,
-        sin(uAngle) * 0.6 + a_position.y,
-        a_position.z,
-        1.0
-      );
+      color = vec4(uColor[int(a_color)], 1.0);
+      gl_Position = vec4(a_position, 1.0);
     }
   </script>
 
   <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
     precision mediump float;
 
-    uniform float uPointSize;
+    in lowp vec4 color;
 
     out vec4 finalColor;
 
     void main(void) {
-      float a = (uPointSize - 20.0) / 20.0;
-      finalColor = vec4(
-        a,
-        a,
-        a,
-        1.0
-      );
+      finalColor = color;
     }
   </script>
 </body>
